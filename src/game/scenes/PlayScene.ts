@@ -4,12 +4,18 @@ export default class PlayScene extends Scene {
   
   // initialise all state within the scene
   gridSize = 8;
-  tileSize = 64;
+  tileSize = 32;
+  canvas = { width: 0, height: 0 }
   roundsWonBySide = {
     white: 0,
     black: 0
   };
-  
+  // Create an object to hold the available pieces
+  availablePieces = {
+      white: [],
+      black: []
+  };
+
   constructor () {
     super({ key: 'PlayScene' })
   }
@@ -17,6 +23,9 @@ export default class PlayScene extends Scene {
 
   preload() {
     // Load your assets here, such as images or sprites for the chess pieces
+
+    // this makes the scene size available at all times
+    this.canvas = this.sys.game.canvas;
   }
 
   create() {
@@ -28,29 +37,40 @@ export default class PlayScene extends Scene {
 
   createBoard() {
 
+    const boardSize = this.gridSize * this.tileSize;
+    const xPad =  ( this.canvas.width - boardSize ) / 2 
+    const yPad =  ( this.canvas.height - boardSize ) / 2 
+
+    console.log({xPad, yPad})
     for (let row = 0; row < this.gridSize; row++) {
       for (let col = 0; col < this.gridSize; col++) {
         // Alternate colors for the tiles
         let color = (row + col) % 2 === 0 ? 0xffffff : 0x000000;
         let tile = this.add.rectangle(
-          col * this.tileSize,
-          row * this.tileSize,
+          xPad + ( col * this.tileSize ),
+          yPad + ( row * this.tileSize) ,
           this.tileSize,
           this.tileSize,
           color
-        ).setOrigin(0, 0);
+        ).setOrigin( 0, 0 );
         
         // Add any additional tile setup here
+        // register the tile to receive events, such as flashing
+        tile.setInteractive()
+        
+        let highlightColor = (row + col) % 2 === 0 ? 0xDD6B20 : 0xDD6B20;
+        tile.on('pointerover',function(){
+          tile.fillColor = highlightColor;
+        })
+        
+        tile.on('pointerout',function(){
+          tile.fillColor = color;
+        })
       }
     }
   }
 
   initializePieces() {
-    // Create an object to hold the available pieces
-    this.availablePieces = {
-      white: [],
-      black: []
-    };
 
     // Define the types of pieces available
     const pieceTypes = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'];
@@ -69,7 +89,7 @@ export default class PlayScene extends Scene {
 
   makePiece(piece, color) {
     // Create a new sprite for the piece but don't add it to the scene yet
-    let sprite = new Phaser.GameObjects.Sprite(this, 0, 0, `${piece}_${color}`);
+    let sprite = new Phaser.GameObjects.Sprite(this, 0, 0, `/${color}_${piece}`);
     sprite.visible = false; // Hide the sprite as it's not on the board yet
 
     // Add any additional setup here, like assigning data to the sprite
